@@ -57,7 +57,7 @@ build() {
   # Only need normal Image, as most Amlogic devices does not need/support Image.gz
   # Image and modules are built in the same run to make sure they're compatible with each other
   # -@ enables symbols in dtbs, so overlay is possible
-  make ${MAKEFLAGS} DTC_FLAGS="-@" Image modules dtbs
+  make -j1 V=s DTC_FLAGS="-@" Image modules dtbs
 }
 
 _package() {
