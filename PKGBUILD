@@ -20,7 +20,7 @@ makedepends=( # Since we don't build the doc, most of the makedeps for other lin
 )
 options=(!strip)
 source=(
-  "git://192.168.25.1/${_srcname}.git#branch=orange-pi-5.10-rk3588-gcc-12"
+  "https://github.com/7Ji/${_srcname}.git#branch=orange-pi-5.10-rk3588-gcc-12"
   'config'
   'linux.preset'
 )
