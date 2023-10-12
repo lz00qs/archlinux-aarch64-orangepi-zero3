@@ -1,10 +1,12 @@
 # Maintainer: 7Ji <pugokughin@gmail.com>
 
-_desc="AArch64 vendor kernel for Orange Pi 5"
-_pkgver_main=5.10.110
-_pkgver_suffix=orangepi5
+_desc="AArch64 vendor kernel for Orange Pi Zero3"
+_pkgver_main=5.4.125
+_pkgver_suffix=orangepi-zero3
 _pkgver_uname="${_pkgver_main}-${_pkgver_suffix}"
-_srcname=linux-orangepi
+_orangepi_repo='linux-orangepi'
+_orangepi_commit='9ab7a758149d3c9b721878a0c18b3f9c5d6c93e6' # orange-pi-5.4-sun50iw9
+_srcname="${_orangepi_repo}-${_orangepi_commit}"
 pkgbase=linux-aarch64-${_pkgver_suffix}
 pkgname=(
   "${pkgbase}"
@@ -13,28 +15,33 @@ pkgname=(
 pkgver="${_pkgver_main}"
 pkgrel=1
 arch=('aarch64')
-url="https://github.com/orangepi-xunlong/linux-orangepi"
+url="https://github.com/orangepi-xunlong/${_orangepi_repo}"
 license=('GPL2')
 makedepends=( # Since we don't build the doc, most of the makedeps for other linux packages are not needed here
   'kmod' 'bc' 'dtc' 'uboot-tools'
 )
-options=(!strip)
+options=(!strip !distcc)
 source=(
-  "https://github.com/7Ji/${_srcname}.git#branch=orange-pi-5.10-rk3588-gcc-12"
+  "${_srcname}.tar.gz::${url}/archive/${_orangepi_commit}.tar.gz"
+  # 'gcc12-fixups.patch::https://github.com/7Ji/linux-orangepi/releases/download/orange-pi-5.10-rk3588-gcc-12-patch-frozen/gcc12-fixups.patch'
   'config'
   'linux.preset'
 )
 sha256sums=(
+  # '93ebccfed4d5d1f5a1612c06520a83346fcf4522dcf50c67bae11359f3f32d85'
+  # 'e9c720fa4dba291f3a87a04eb9245fcf99cd0c4164d2c5deefe7ca35eedf1960'
+  # '325e4afdc16e1eb34e18e651b0c7b8cb43a60ade086d8388aa5667d913157e55'
+  # 'bdcd6cbf19284b60fac6d6772f1e0ec2e2fe03ce7fe3d7d16844dd6d2b5711f3'
   'SKIP'
-  '1049189e20fbd9a514da524f25118399bcb0b1a73d3ac08486be82bed32bd57c'
-  'bdcd6cbf19284b60fac6d6772f1e0ec2e2fe03ce7fe3d7d16844dd6d2b5711f3'
+  'SKIP'
+  'SKIP'
 )
 
 prepare() {
   cd "${_srcname}"
 
-#   echo "Patching kernel so it could be built with GCC 12..."
-#   patch -p1 < ../gcc12-fixups.patch
+  # echo "Patching kernel so it could be built with GCC 12..."
+  # patch -p1 < ../gcc12-fixups.patch
 
   echo "Setting version..."
   scripts/setlocalversion --save-scmversion
@@ -54,10 +61,13 @@ build() {
 
   # Host LDFLAGS or other LDFLAGS set by makepkg/user is not helpful for building kernel: it should links nothing outside of itself
   unset LDFLAGS
-  # Only need normal Image, as most Amlogic devices does not need/support Image.gz
+  # Only need normal Image, as most Rockchip devices does not need/support Image.gz
   # Image and modules are built in the same run to make sure they're compatible with each other
   # -@ enables symbols in dtbs, so overlay is possible
-  make -j1 V=s DTC_FLAGS="-@" Image modules dtbs
+
+  # 下面是 orange pi build 的官方 cmd
+  # make ARCH=arm64 ${MAKEFLAGS} olddefconfig
+  make ${MAKEFLAGS} DTC_FLAGS="-@" Image modules dtbs
 }
 
 _package() {
@@ -72,6 +82,8 @@ _package() {
     'linux-firmware: firmware images needed for some devices'
     'wireless-regdb: to set the correct wireless channels of your country'
   )
+  
+  # 当包被升级或卸载时，应当备份的文件（的路径）序列。
   backup=(
     "etc/mkinitcpio.d/${pkgbase}.preset"
   )
@@ -80,6 +92,9 @@ _package() {
 
   # Install modules
   echo "Installing modules..."
+
+  # INSTALL_MOD_STRIP=1 这个选项用于指示在安装模块时剥离（strip）符号信息。
+  # 这可以减小模块文件的大小，通常在发布时使用以减少存储空间和提高性能。
   make INSTALL_MOD_PATH="${pkgdir}/usr" INSTALL_MOD_STRIP=1 modules_install
 
   # Install DTBs, not to target pkg, but in srcdir, so the later package() routine could use them
@@ -100,13 +115,19 @@ _package() {
     install -Dm644 /dev/stdin "${pkgdir}/etc/mkinitcpio.d/${pkgbase}.preset"
 
   # Install DTB
-  echo 'Installing DTBs for Rockchip SoCs...'
+  echo 'Installing DTBs for Allwinner SoCs...'
   install -d -m 755 "${pkgdir}/boot/dtbs/${pkgbase}"
-  cp -t "${pkgdir}/boot/dtbs/${pkgbase}" -a "${srcdir}/dtbs/rockchip"
+  cp -t "${pkgdir}/boot/dtbs/${pkgbase}" -a "${srcdir}/dtbs/allwinner"
 }
 
 _package-headers() {
   pkgdesc="Header files and scripts for building modules for linux kernel - ${_desc}"
+  # Compiling modules against the tree needs gcc-wrapper.py clang-wrapper.py,
+  # which both need Python.
+  # Discussed in https://github.com/7Ji/archrepo/issues/5
+  # About why depends instead of optdepends, this is a similar decision to
+  # https://bugs.archlinux.org/task/69654
+  depends=('python')
   
   # Mostly copied from alarm's linux-aarch64 and modified
   cd "${_srcname}"
