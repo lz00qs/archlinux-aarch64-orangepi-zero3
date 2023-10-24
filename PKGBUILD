@@ -1,7 +1,7 @@
 # Maintainer: 7Ji <pugokughin@gmail.com>
 
 _desc="AArch64 vendor kernel for Orange Pi Zero3"
-_pkgver_main=5.4.125
+_pkgver_main=6.1.31
 _pkgver_suffix=orangepi-zero3
 _pkgver_uname="${_pkgver_main}-${_pkgver_suffix}"
 _orangepi_repo='linux-orangepi'
