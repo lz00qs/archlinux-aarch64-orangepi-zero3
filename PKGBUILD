@@ -1,4 +1,4 @@
-# Maintainer: 7Ji <pugokughin@gmail.com>
+# Maintainer: lz00qs <lz00qs@gmail.com>
 
 _desc="AArch64 vendor kernel for Orange Pi Zero3"
 _pkgver_main=6.1.31
