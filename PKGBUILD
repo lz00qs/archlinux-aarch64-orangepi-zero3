@@ -6,7 +6,8 @@ _pkgver_suffix=orangepi-zero3
 _pkgver_uname="${_pkgver_main}-${_pkgver_suffix}"
 _orangepi_repo='linux-orangepi'
 _orangepi_commit='3495b5ee0594566c9fed930b96b1cae90600412e' # orange-pi-6.1-sun50iw9
-_srcname="${_orangepi_repo}-${_orangepi_commit}"
+_srcname='source'
+# _srcname="${_orangepi_repo}-${_orangepi_commit}"
 pkgbase=linux-aarch64-${_pkgver_suffix}
 pkgname=(
   "${pkgbase}"
